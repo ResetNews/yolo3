@@ -3,10 +3,11 @@ from textblob import TextBlob
 import tweepy
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 from decouple import config
 
 # Set up Twitter API keys from Streamlit Secrets or .env file
-BEARER_TOKEN = config("BEARER_TOKEN")
+BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAALhUxwEAAAAAW2qljtJBEia39TG7mCIHQUFxIHs%3Dq7X0RqBHiOlrlY0CQMXLNRtgMyLsxchif4QAYqJd8dWOY1aLuf"
 
 # Authenticate with Twitter API v2
 def authenticate_twitter():
@@ -17,10 +18,11 @@ def authenticate_twitter():
         st.error(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
     return client
 
-# Search for tweets using Twitter API v2
-def search_tweets_v2(client, query, count=10):
+# Search for tweets using Twitter API v2 with rate limit handling
+def search_tweets_v2(client, query, count=5):
     try:
         tweets = client.search_recent_tweets(query=query, max_results=count, tweet_fields=["created_at", "text", "author_id"])
+        time.sleep(2)  # Pause zwischen den Anfragen, um Rate Limits zu vermeiden
         data = []
         if tweets.data:
             for tweet in tweets.data:
@@ -30,8 +32,8 @@ def search_tweets_v2(client, query, count=10):
                     "created_at": tweet.created_at
                 })
         return pd.DataFrame(data)
-    except tweepy.errors.Forbidden as e:
-        st.error(f"Fehler: Zugriff verweigert. Details: {e}")
+    except tweepy.errors.TooManyRequests:
+        st.error("Rate Limit erreicht. Bitte warten Sie 15 Minuten und versuchen Sie es erneut.")
         return pd.DataFrame()
     except Exception as e:
         st.error(f"Ein Fehler ist aufgetreten: {e}")
@@ -72,7 +74,7 @@ if st.button("Analysieren"):
     if query:
         client = authenticate_twitter()
         st.write("Tweets werden abgerufen...")
-        tweets_df = search_tweets_v2(client, query, count=10)
+        tweets_df = search_tweets_v2(client, query, count=5)
 
         if not tweets_df.empty:
             st.write(f"Gefundene Tweets für '{query}':", tweets_df.head())
