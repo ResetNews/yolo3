@@ -3,11 +3,9 @@ from textblob import TextBlob
 import tweepy
 import pandas as pd
 import matplotlib.pyplot as plt
-import time
-from decouple import config
 
-# Set up Twitter API keys from Streamlit Secrets or .env file
-BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAALhUxwEAAAAAW2qljtJBEia39TG7mCIHQUFxIHs%3Dq7X0RqBHiOlrlY0CQMXLNRtgMyLsxchif4QAYqJd8dWOY1aLuf"
+# Set up Twitter API keys from Streamlit Secrets
+BEARER_TOKEN = st.secrets["BEARER_TOKEN"]
 
 # Authenticate with Twitter API v2
 def authenticate_twitter():
@@ -34,7 +32,7 @@ def search_tweets_v2(client, query, count=10):
     except tweepy.errors.TooManyRequests:
         st.error("Rate Limit erreicht. Wartezeit wird berechnet...")
         # Wartezeit aus der Header-Information berechnen
-        reset_time = client.get_response_headers().get("x-rate-limit-reset")
+        reset_time = client.last_response.headers.get("x-rate-limit-reset")
         if reset_time:
             wait_time = int(reset_time) - int(time.time())
             st.warning(f"Wartezeit: {wait_time} Sekunden")
