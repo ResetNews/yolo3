@@ -3,9 +3,9 @@ from textblob import TextBlob
 import tweepy
 import pandas as pd
 import matplotlib.pyplot as plt
-from decouple import config  # Import decouple to load environment variables
+from decouple import config
 
-# Set up Twitter API keys from environment variables
+# Set up Twitter API keys from Streamlit Secrets or .env file
 API_KEY = config("API_KEY")
 API_SECRET_KEY = config("API_SECRET_KEY")
 ACCESS_TOKEN = config("ACCESS_TOKEN")
@@ -19,7 +19,7 @@ def authenticate_twitter():
     try:
         api.verify_credentials()
         st.success("Twitter-Authentifizierung erfolgreich!")
-    except tweepy.errors.Unauthorized as e:
+    except tweepy.errors.Unauthorized:
         st.error("Fehler bei der Authentifizierung: Ungültige API-Schlüssel oder Tokens.")
     except Exception as e:
         st.error(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
@@ -27,15 +27,22 @@ def authenticate_twitter():
 
 # Search for tweets mentioning the company
 def search_tweets(api, query, count=100):
-    tweets = tweepy.Cursor(api.search_tweets, q=query, lang="en", tweet_mode="extended").items(count)
-    data = []
-    for tweet in tweets:
-        data.append({
-            "text": tweet.full_text,
-            "user": tweet.user.screen_name,
-            "created_at": tweet.created_at
-        })
-    return pd.DataFrame(data)
+    try:
+        tweets = tweepy.Cursor(api.search_tweets, q=query, lang="en", tweet_mode="extended").items(count)
+        data = []
+        for tweet in tweets:
+            data.append({
+                "text": tweet.full_text,
+                "user": tweet.user.screen_name,
+                "created_at": tweet.created_at
+            })
+        return pd.DataFrame(data)
+    except tweepy.errors.Forbidden as e:
+        st.error(f"Fehler: Zugriff verweigert. Details: {e}")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Ein Fehler ist aufgetreten: {e}")
+        return pd.DataFrame()
 
 # Perform sentiment analysis
 def analyze_sentiment(tweets_df):
