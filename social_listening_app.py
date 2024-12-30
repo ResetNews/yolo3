@@ -19,8 +19,10 @@ def authenticate_twitter():
     try:
         api.verify_credentials()
         st.success("Twitter-Authentifizierung erfolgreich!")
-    except tweepy.TweepError as e:
-        st.error(f"Fehler bei der Authentifizierung: {e}")
+    except tweepy.errors.Unauthorized as e:
+        st.error("Fehler bei der Authentifizierung: Ungültige API-Schlüssel oder Tokens.")
+    except Exception as e:
+        st.error(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
     return api
 
 # Search for tweets mentioning the company
