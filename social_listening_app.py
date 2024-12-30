@@ -6,15 +6,11 @@ import matplotlib.pyplot as plt
 from decouple import config
 
 # Set up Twitter API keys from Streamlit Secrets or .env file
-API_KEY = config("API_KEY")
-API_SECRET_KEY = config("API_SECRET_KEY")
-ACCESS_TOKEN = config("ACCESS_TOKEN")
-ACCESS_TOKEN_SECRET = config("ACCESS_TOKEN_SECRET")
+BEARER_TOKEN = config("BEARER_TOKEN")
 
 # Authenticate with Twitter API v2
 def authenticate_twitter():
-    client = tweepy.Client(bearer_token=API_KEY, consumer_key=API_KEY, consumer_secret=API_SECRET_KEY,
-                           access_token=ACCESS_TOKEN, access_token_secret=ACCESS_TOKEN_SECRET)
+    client = tweepy.Client(bearer_token=BEARER_TOKEN)
     try:
         st.success("Twitter-Authentifizierung erfolgreich!")
     except Exception as e:
