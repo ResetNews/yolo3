@@ -22,7 +22,6 @@ def authenticate_twitter():
 def search_tweets_v2(client, query, count=10):
     try:
         tweets = client.search_recent_tweets(query=query, max_results=count, tweet_fields=["created_at", "text", "author_id"])
-        time.sleep(60)  # Warte 60 Sekunden zwischen den Anfragen
         data = []
         if tweets.data:
             for tweet in tweets.data:
@@ -33,7 +32,16 @@ def search_tweets_v2(client, query, count=10):
                 })
         return pd.DataFrame(data)
     except tweepy.errors.TooManyRequests:
-        st.error("Rate Limit erreicht. Bitte warten Sie 15 Minuten und versuchen Sie es erneut.")
+        st.error("Rate Limit erreicht. Wartezeit wird berechnet...")
+        # Wartezeit aus der Header-Information berechnen
+        reset_time = client.get_response_headers().get("x-rate-limit-reset")
+        if reset_time:
+            wait_time = int(reset_time) - int(time.time())
+            st.warning(f"Wartezeit: {wait_time} Sekunden")
+            time.sleep(max(wait_time, 1))
+        else:
+            st.error("Rate Limit-Reset-Zeit nicht verfügbar. Bitte 15 Minuten warten.")
+            time.sleep(900)  # 15 Minuten warten
         return pd.DataFrame()
     except Exception as e:
         st.error(f"Ein Fehler ist aufgetreten: {e}")
