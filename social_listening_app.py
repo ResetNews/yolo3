@@ -1,21 +1,26 @@
-
 import streamlit as st
 from textblob import TextBlob
 import tweepy
 import pandas as pd
 import matplotlib.pyplot as plt
+from decouple import config  # Import decouple to load environment variables
 
-# Set up Twitter API keys (replace with your actual keys)
-API_KEY = "your_api_key"
-API_SECRET_KEY = "your_api_secret_key"
-ACCESS_TOKEN = "your_access_token"
-ACCESS_TOKEN_SECRET = "your_access_token_secret"
+# Set up Twitter API keys from environment variables
+API_KEY = config("API_KEY")
+API_SECRET_KEY = config("API_SECRET_KEY")
+ACCESS_TOKEN = config("ACCESS_TOKEN")
+ACCESS_TOKEN_SECRET = config("ACCESS_TOKEN_SECRET")
 
 # Authenticate with Twitter API
 def authenticate_twitter():
     auth = tweepy.OAuthHandler(API_KEY, API_SECRET_KEY)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
     api = tweepy.API(auth, wait_on_rate_limit=True)
+    try:
+        api.verify_credentials()
+        st.success("Twitter-Authentifizierung erfolgreich!")
+    except tweepy.TweepError as e:
+        st.error(f"Fehler bei der Authentifizierung: {e}")
     return api
 
 # Search for tweets mentioning the company
@@ -55,6 +60,9 @@ def visualize_sentiment(tweets_df):
 st.title("Social Listening Tool")
 
 st.write("Willkommen beim Social Listening Tool! Geben Sie ein Keyword ein, um die Social-Media-Stimmung zu analysieren.")
+
+if st.button("Test Authentifizierung"):
+    authenticate_twitter()
 
 query = st.text_input("Geben Sie ein Keyword oder einen Firmennamen ein:")
 
