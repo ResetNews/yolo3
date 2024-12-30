@@ -18,24 +18,9 @@ def authenticate_twitter():
         st.error(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
     return client
 
-# Check rate limit status
-def check_rate_limit(client):
-    try:
-        rate_limit_status = client.get_rate_limit_status()
-        remaining = rate_limit_status['resources']['search']['/search/tweets']['remaining']
-        reset_time = rate_limit_status['resources']['search']['/search/tweets']['reset']
-        st.write(f"Verbleibende Anfragen: {remaining}")
-        if remaining == 0:
-            wait_time = reset_time - int(time.time())
-            st.warning(f"Rate Limit erreicht. Wartezeit: {wait_time} Sekunden")
-            time.sleep(wait_time + 1)
-    except Exception as e:
-        st.error(f"Fehler beim Überprüfen des Rate Limits: {e}")
-
 # Search for tweets using Twitter API v2 with rate limit handling
 def search_tweets_v2(client, query, count=5):
     try:
-        check_rate_limit(client)
         tweets = client.search_recent_tweets(query=query, max_results=count, tweet_fields=["created_at", "text", "author_id"])
         time.sleep(15)  # Erhöhte Pause zwischen den Anfragen, um Rate Limits zu vermeiden
         data = []
