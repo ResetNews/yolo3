@@ -11,31 +11,28 @@ API_SECRET_KEY = config("API_SECRET_KEY")
 ACCESS_TOKEN = config("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = config("ACCESS_TOKEN_SECRET")
 
-# Authenticate with Twitter API
+# Authenticate with Twitter API v2
 def authenticate_twitter():
-    auth = tweepy.OAuthHandler(API_KEY, API_SECRET_KEY)
-    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-    api = tweepy.API(auth, wait_on_rate_limit=True)
+    client = tweepy.Client(bearer_token=API_KEY, consumer_key=API_KEY, consumer_secret=API_SECRET_KEY,
+                           access_token=ACCESS_TOKEN, access_token_secret=ACCESS_TOKEN_SECRET)
     try:
-        api.verify_credentials()
         st.success("Twitter-Authentifizierung erfolgreich!")
-    except tweepy.errors.Unauthorized:
-        st.error("Fehler bei der Authentifizierung: Ungültige API-Schlüssel oder Tokens.")
     except Exception as e:
         st.error(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
-    return api
+    return client
 
-# Search for tweets mentioning the company
-def search_tweets(api, query, count=100):
+# Search for tweets using Twitter API v2
+def search_tweets_v2(client, query, count=10):
     try:
-        tweets = tweepy.Cursor(api.search_tweets, q=query, lang="en", tweet_mode="extended").items(count)
+        tweets = client.search_recent_tweets(query=query, max_results=count, tweet_fields=["created_at", "text", "author_id"])
         data = []
-        for tweet in tweets:
-            data.append({
-                "text": tweet.full_text,
-                "user": tweet.user.screen_name,
-                "created_at": tweet.created_at
-            })
+        if tweets.data:
+            for tweet in tweets.data:
+                data.append({
+                    "text": tweet.text,
+                    "user": tweet.author_id,
+                    "created_at": tweet.created_at
+                })
         return pd.DataFrame(data)
     except tweepy.errors.Forbidden as e:
         st.error(f"Fehler: Zugriff verweigert. Details: {e}")
@@ -77,9 +74,9 @@ query = st.text_input("Geben Sie ein Keyword oder einen Firmennamen ein:")
 
 if st.button("Analysieren"):
     if query:
-        api = authenticate_twitter()
+        client = authenticate_twitter()
         st.write("Tweets werden abgerufen...")
-        tweets_df = search_tweets(api, query, count=100)
+        tweets_df = search_tweets_v2(client, query, count=10)
 
         if not tweets_df.empty:
             st.write(f"Gefundene Tweets für '{query}':", tweets_df.head())
